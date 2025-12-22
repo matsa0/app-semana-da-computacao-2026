@@ -1,9 +1,10 @@
 
-<h1 style="text-align:center;">˗ˏˋ  Aplicativo para a Semana da Computação do DECSI ˎˊ˗ </h1>
+<h1 align="center">˗ˏˋ  Aplicativo para a Semana da Computação do DECSI ˎˊ˗ 
 
-<div style="text-align:center;">
-    <img src="./semana_da_computacao_logo.jpg" width="600px">
-</div>
+<br>
+<img src="./semana_da_computacao_logo.jpg" width="600px">
+</h1>
+
 
 Como trabalho da disciplina de **Gerência  de Projetos de Software**, o projeto consiste no desenvolvimento de um aplicativo em Flutter
 para a Semana da Computação do DECSI. O propósito desse aplicativo é melhorar a experiência dos paritcipantes e organizadores do evento centralizando informações e funcionalidades fundamentais para o bom funcionamento do evento. Além disso, produzir documentos e artefatos, aplicando os conceitos do Guia PMBOK e baseando-se em boas práticas de gerenciamento de projetos de software. Os documentos produzidos e atualizados são:
