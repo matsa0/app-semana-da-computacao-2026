@@ -18,10 +18,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Semana da Computação',
       theme: ThemeData(
-        primarySwatch: Colors.blue, 
+        primaryColor: const Color(0xFFB80D48),
         useMaterial3: true,
-      ),
-      
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFFB80D48),
+          foregroundColor: Colors.white,
+          centerTitle: false,
+        )
+      ),  
+
       home: BaseScreen(),
     );
   }

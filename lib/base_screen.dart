@@ -1,21 +1,28 @@
 import 'package:flutter/material.dart';
 
 class BaseScreen extends StatefulWidget {
+  const BaseScreen({super.key});
 
   @override
-  _BaseScreenState createState() => _BaseScreenState();
-
+  State<BaseScreen> createState() => _BaseScreenState();
 }
 
 class _BaseScreenState extends State<BaseScreen> {
 
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    Center(child: Text("Homepage"),),
-    Center(child: Text("Search"),),
-    Center(child: Text("My Activities"),),
-    Center(child: Text("Profile"),)
+  final List<Widget> _screens = const [
+    Center(child: Text("Página inicial"),),
+    Center(child: Text("Buscar por atividade"),),
+    Center(child: Text("Minhas atividades"),),
+    Center(child: Text("Perfil"),)
+  ];
+
+  final List<Widget> _titles = const [
+    Text('Página Inicial', textAlign: TextAlign.left,),
+    Text('Buscar Atividades', textAlign: TextAlign.left,),
+    Text('Minhas Atividades', textAlign: TextAlign.left,),
+    Text('Perfil', textAlign: TextAlign.left,),
   ];
 
 
@@ -28,18 +35,21 @@ class _BaseScreenState extends State<BaseScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: _titles[_selectedIndex],
+      ),
       body: _screens[_selectedIndex],
 
         bottomNavigationBar: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
           selectedItemColor: Color(0xFFB80D48),
           currentIndex: _selectedIndex,
-          onTap: _navigateBottomBar,
+          onTap: _navigateBottomBar, 
           items: [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-            BottomNavigationBarItem(icon: Icon(Icons.bookmark_added_outlined), label: 'My activities'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Início'),
+            BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),
+            BottomNavigationBarItem(icon: Icon(Icons.bookmark_added_outlined), label: 'Minhas Atividades'),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
           ]),
     );
   }
