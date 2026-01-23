@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; // Pacote que instalamos
+import 'package:firebase_core/firebase_core.dart'; 
+import 'base_screen.dart';
 
 void main() async {
-  // Garante que o motor do Flutter esteja pronto
-  WidgetsFlutterBinding.ensureInitialized();
   
-  // Inicializa a conexão com o Firebase
+  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
   runApp(const MyApp());
@@ -19,11 +18,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Semana da Computação',
       theme: ThemeData(
-        primarySwatch: Colors.blue, // Cor padrão do app
+        primarySwatch: Colors.blue, 
         useMaterial3: true,
       ),
-      // Por enquanto, mostraremos apenas uma tela simples de teste
-      home: const TelaTeste(),
+      
+      home: BaseScreen(),
     );
   }
 }
