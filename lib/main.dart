@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'login_screen.dart';
+import 'register_screen.dart';
 import 'base_screen.dart';
-import 'package:firebase_core/firebase_core.dart' show Firebase;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,27 +27,14 @@ class MainApp extends StatelessWidget {
           backgroundColor: Color(0xFFB80D48),
           foregroundColor: Colors.white,
           centerTitle: false,
-        )
-      ),  
-
-      home: BaseScreen(),
-    );
-  }
-}
-
-class TelaTeste extends StatelessWidget {
-  const TelaTeste({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Teste do Projeto")),
-      body: const Center(
-        child: Text(
-          "Firebase Conectado com Sucesso!",
-          style: TextStyle(fontSize: 20, color: Colors.green),
         ),
       ),
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/base': (context) => const BaseScreen(),
+      },
     );
   }
 }
