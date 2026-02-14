@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../widgets/atividade_card.dart';
 import '../../models/atividade_model.dart';
+import '../../screens/programacao/detalhes_atividade_screen.dart';
 
 class TelaInicial extends StatefulWidget {
   const TelaInicial({super.key});
@@ -75,7 +76,12 @@ class _TelaInicialState extends State<TelaInicial> {
                     return AtividadeCard(
                       atividade: atividadesFiltradas[index],
                       onPressed: () {
-                        // ação ao clicar no card
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DetalhesAtividadeScreen(atividade: atividadesFiltradas[index]),
+                          ),
+                        );
                       },
                     );
                   },
