@@ -146,11 +146,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Criar usuário no Firebase Auth
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: senha);
 
-      // Salvar dados adicionais no Firestore
       await FirebaseFirestore.instance
           .collection('usuarios')
           .doc(userCredential.user!.uid)
@@ -163,6 +161,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'criadoEm': FieldValue.serverTimestamp(),
       });
 
+      if (!mounted) return;
+
       _showSnackbar('Usuário registrado com sucesso!');
       Navigator.pop(context); // Volta para login
     } on FirebaseAuthException catch (e) {
@@ -170,7 +170,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       _showSnackbar('Erro inesperado: $e');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
