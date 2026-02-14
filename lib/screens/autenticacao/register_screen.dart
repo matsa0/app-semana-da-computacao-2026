@@ -158,6 +158,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'curso': curso,
         'email': email,
         'uid': userCredential.user!.uid,
+        'isOrganizador': false, 
+        'isPalestrante': false,
         'criadoEm': FieldValue.serverTimestamp(),
       });
 
