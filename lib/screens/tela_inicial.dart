@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../widgets/atividade_card.dart';
 import '../../models/atividade_model.dart';
-import '../../screens/programacao/detalhes_atividade_screen.dart';
+import '../screens/programacao/detalhes_atividade_screen.dart';
+import '../screens/administracao/cadastrar_atividade_screen.dart';
 
 class TelaInicial extends StatefulWidget {
   const TelaInicial({super.key});
@@ -18,7 +19,22 @@ class _TelaInicialState extends State<TelaInicial> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Atividades')),
+      appBar: AppBar(
+        title: const Text('Atividades'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CadastrarAtividadeScreen(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
