@@ -1,17 +1,143 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/atividade_model.dart';
 
-class DetalhesAtividadeScreen extends StatelessWidget {
+class DetalhesAtividadeScreen extends StatefulWidget {
   final Atividade atividade;
 
   const DetalhesAtividadeScreen({super.key, required this.atividade});
 
   @override
+  State<DetalhesAtividadeScreen> createState() => _DetalhesAtividadeScreenState();
+}
+
+class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
+  bool _isLoading = false;
+  bool _estaInscrito = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _verificarStatusInscricao();
+  }
+
+  Future<void> _verificarStatusInscricao() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('inscricoes')
+        .doc('${widget.atividade.id}_${user.uid}')
+        .get();
+
+    if (mounted) {
+      setState(() {
+        _estaInscrito = doc.exists;
+      });
+    }
+  }
+
+  Future<void> _processarAcao() async {
+    if (_estaInscrito) {
+      await _cancelarInscricao();
+    } else {
+      await _realizarInscricao();
+    }
+  }
+
+  Future<void> _realizarInscricao() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    setState(() => _isLoading = true);
+    final firestore = FirebaseFirestore.instance;
+
+    try {
+      final inscricoesUsuario = await firestore
+          .collection('inscricoes')
+          .where('usuarioId', isEqualTo: user.uid)
+          .get();
+
+      for (var doc in inscricoesUsuario.docs) {
+        final atvInscritaDoc = await firestore.collection('atividades').doc(doc['atividadeId']).get();
+        if (atvInscritaDoc.exists) {
+          if (atvInscritaDoc['data'] == widget.atividade.data && 
+              atvInscritaDoc['horario'] == widget.atividade.horario) {
+            throw Exception('Conflito de horário: você já possui uma atividade neste período.');
+          }
+        }
+      }
+
+      final atividadeRef = firestore.collection('atividades').doc(widget.atividade.id);
+      final inscricaoRef = firestore.collection('inscricoes').doc('${widget.atividade.id}_${user.uid}');
+
+      await firestore.runTransaction((transaction) async {
+        final atividadeSnapshot = await transaction.get(atividadeRef);
+        final int vagasAtuais = atividadeSnapshot.data()?['vagas'] ?? 0;
+
+        if (vagasAtuais <= 0) {
+          throw Exception('Não há vagas disponíveis para esta atividade.');
+        }
+
+        transaction.update(atividadeRef, {'vagas': vagasAtuais - 1});
+        transaction.set(inscricaoRef, {
+          'atividadeId': widget.atividade.id,
+          'usuarioId': user.uid,
+          'tituloAtividade': widget.atividade.titulo,
+          'dataHoraInscricao': FieldValue.serverTimestamp(),
+        });
+      });
+
+      _mostrarMensagem('Inscrição confirmada com sucesso!', Colors.green);
+      if (mounted) setState(() => _estaInscrito = true);
+      
+    } catch (e) {
+      _mostrarMensagem(e.toString().replaceAll('Exception: ', ''), Colors.red);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _cancelarInscricao() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    setState(() => _isLoading = true);
+    final firestore = FirebaseFirestore.instance;
+
+    try {
+      final atividadeRef = firestore.collection('atividades').doc(widget.atividade.id);
+      final inscricaoRef = firestore.collection('inscricoes').doc('${widget.atividade.id}_${user.uid}');
+
+      await firestore.runTransaction((transaction) async {
+        final atividadeSnapshot = await transaction.get(atividadeRef);
+        final int vagasAtuais = atividadeSnapshot.data()?['vagas'] ?? 0;
+
+        transaction.update(atividadeRef, {'vagas': vagasAtuais + 1});
+        transaction.delete(inscricaoRef);
+      });
+
+      _mostrarMensagem('Inscrição cancelada com sucesso.', Colors.orange);
+      if (mounted) setState(() => _estaInscrito = false);
+    } catch (e) {
+      _mostrarMensagem('Erro ao cancelar: $e', Colors.red);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _mostrarMensagem(String texto, Color cor) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(texto), backgroundColor: cor),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detalhes da Atividade'),
-      ),
+      appBar: AppBar(title: const Text('Detalhes da Atividade')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -20,27 +146,27 @@ class DetalhesAtividadeScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: _getCorPorTipo(atividade.tipo),
+                color: _getCorPorTipo(widget.atividade.tipo),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                atividade.tipo,
+                widget.atividade.tipo,
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 16),
             Text(
-              atividade.titulo,
+              widget.atividade.titulo,
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            _buildInfoRow(Icons.person, 'Ministrante: ${atividade.ministrante}'),
+            _buildInfoRow(Icons.person, 'Ministrante: ${widget.atividade.ministrante}'),
             const SizedBox(height: 8),
-            _buildInfoRow(Icons.calendar_today, 'Data: ${atividade.data}'),
+            _buildInfoRow(Icons.calendar_today, 'Data: ${widget.atividade.data}'),
             const SizedBox(height: 8),
-            _buildInfoRow(Icons.access_time, 'Horário: ${atividade.horario}'),
+            _buildInfoRow(Icons.access_time, 'Horário: ${widget.atividade.horario}'),
             const SizedBox(height: 8),
-            _buildInfoRow(Icons.group, 'Vagas disponíveis: ${atividade.vagas}'),
+            _buildInfoRow(Icons.group, 'Vagas disponíveis: ${widget.atividade.vagas}'),
             const SizedBox(height: 24),
             const Text(
               'Descrição',
@@ -48,28 +174,25 @@ class DetalhesAtividadeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              atividade.descricao.isEmpty ? 'Nenhuma descrição informada.' : atividade.descricao,
+              widget.atividade.descricao.isEmpty ? 'Nenhuma descrição informada.' : widget.atividade.descricao,
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB80D48),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                onPressed: () {
-                  // Ação temporária, a lógica com Firebase virá depois
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Lógica de inscrição em desenvolvimento.')),
-                  );
-                },
-                child: const Text(
-                  'Inscrever-se',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
-              ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _estaInscrito ? Colors.grey[700] : const Color(0xFFB80D48),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      onPressed: _processarAcao,
+                      child: Text(
+                        _estaInscrito ? 'Cancelar Inscrição' : 'Inscrever-se',
+                        style: const TextStyle(fontSize: 18, color: Colors.white),
+                      ),
+                    ),
             ),
           ],
         ),
@@ -79,14 +202,10 @@ class DetalhesAtividadeScreen extends StatelessWidget {
 
   Color _getCorPorTipo(String tipo) {
     switch (tipo) {
-      case 'Palestra':
-        return Colors.orange;
-      case 'Minicurso':
-        return Colors.green;
-      case 'Oficina':
-        return Colors.cyan;
-      default:
-        return Colors.grey;
+      case 'Palestra': return Colors.orange;
+      case 'Minicurso': return Colors.green;
+      case 'Oficina': return Colors.cyan;
+      default: return Colors.grey;
     }
   }
 
@@ -95,12 +214,7 @@ class DetalhesAtividadeScreen extends StatelessWidget {
       children: [
         Icon(icon, color: Colors.grey[700], size: 20),
         const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(fontSize: 16),
-          ),
-        ),
+        Expanded(child: Text(text, style: const TextStyle(fontSize: 16))),
       ],
     );
   }

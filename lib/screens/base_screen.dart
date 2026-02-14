@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'tela_inicial.dart';
+import './minhas_atividades/minhas_atividades_screen.dart';
 
 class BaseScreen extends StatefulWidget {
   const BaseScreen({super.key});
@@ -14,7 +15,7 @@ class _BaseScreenState extends State<BaseScreen> {
   final List<Widget> _screens = const [
     TelaInicial(),
     Center(child: Text("Buscar por atividade")),
-    Center(child: Text("Minhas atividades")),
+    MinhasAtividadesScreen(),
     Center(child: Text("Perfil")),
   ];
 
