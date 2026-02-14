@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'atividade_card.dart';
-import 'atividade_model.dart';
+import '../../widgets/atividade_card.dart';
+import '../../models/atividade_model.dart';
 
 class TelaInicial extends StatefulWidget {
   const TelaInicial({super.key});
@@ -63,16 +63,7 @@ class _TelaInicialState extends State<TelaInicial> {
                   return const Center(child: Text('Nenhuma atividade encontrada.'));
                 }
 
-                final atividades = snapshot.data!.docs.map((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  return Atividade(
-                    titulo: data['titulo'] ?? '',
-                    tipo: data['tipo'] ?? '',
-                    ministrante: data['ministrante'] ?? '',
-                    data: data['data'] ?? '',
-                    horario: data['horario'] ?? '',
-                  );
-                }).toList();
+                final atividades = snapshot.data!.docs.map((doc) => Atividade.fromFirestore(doc)).toList();
 
                 final atividadesFiltradas = filtroSelecionado == 'Todos'
                     ? atividades

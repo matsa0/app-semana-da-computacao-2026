@@ -113,15 +113,24 @@ class _LoginScreenState extends State<LoginScreen> {
         email: email,
         password: senha,
       );
+      
+      if (!mounted) return; 
+
       Navigator.pushReplacementNamed(context, '/base');
     } on FirebaseAuthException catch (e) {
+      
+      if (!mounted) return;
+      
       _showMessage(e.message ?? 'Erro ao logar');
     } finally {
-      setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
   void _showMessage(String msg) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg)),
     );

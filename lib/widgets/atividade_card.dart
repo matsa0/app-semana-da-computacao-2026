@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'atividade_model.dart';
+import '../models/atividade_model.dart';
 
 class AtividadeCard extends StatelessWidget {
   final Atividade atividade;
