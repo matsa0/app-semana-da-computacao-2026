@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/atividade_model.dart';
 import '../interacao/participantes_atividade_screen.dart';
 import '../administracao/checkin_manual_screen.dart';
-
+import 'package:qr_flutter/qr_flutter.dart';
 class DetalhesAtividadeScreen extends StatefulWidget {
   final Atividade atividade;
 
@@ -141,6 +141,46 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
     }
   }
 
+  void _mostrarQRCode() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final inscricaoId = '${widget.atividade.id}_${user.uid}';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Meu Ingresso', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Apresente este QR Code na entrada do evento para o Organizador.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: 200,
+              height: 200,
+              child: QrImageView(
+                data: inscricaoId, // texto que o leitor vai ler
+                version: QrVersions.auto,
+                size: 200.0,
+                backgroundColor: Colors.white, // fundo branco
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar', style: TextStyle(color: Color(0xFFB80D48))),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _cancelarInscricao() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -274,21 +314,44 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
                 ),
               )
             else
-              SizedBox(
-                width: double.infinity,
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
+              Column(
+                children: [
+                  // 👇 NOVO BOTÃO DE INGRESSO 👇
+                  if (_estaInscrito) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _estaInscrito ? Colors.grey[700] : const Color(0xFFB80D48),
+                          backgroundColor: Colors.green, // Verde para indicar passagem livre!
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        onPressed: _processarAcao,
-                        child: Text(
-                          _estaInscrito ? 'Cancelar Inscrição' : 'Inscrever-se',
-                          style: const TextStyle(fontSize: 18, color: Colors.white),
-                        ),
+                        onPressed: _mostrarQRCode,
+                        icon: const Icon(Icons.qr_code_2, color: Colors.white),
+                        label: const Text('Meu Ingresso (QR Code)', style: TextStyle(fontSize: 18, color: Colors.white)),
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  // 👆 FIM DO BOTÃO DE INGRESSO 👆
+
+                  // BOTÃO ORIGINAL DE INSCRIÇÃO/CANCELAMENTO
+                  SizedBox(
+                    width: double.infinity,
+                    child: _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _estaInscrito ? Colors.grey[700] : const Color(0xFFB80D48),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            onPressed: _processarAcao,
+                            child: Text(
+                              _estaInscrito ? 'Cancelar Inscrição' : 'Inscrever-se',
+                              style: const TextStyle(fontSize: 18, color: Colors.white),
+                            ),
+                          ),
+                  ),
+                ],
               ),
 
             // ==========================================
