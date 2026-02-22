@@ -190,7 +190,7 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
                     onChanged: (val) {
                       setState(() {
                         _ministranteIdSelecionado = val;
-                        // Guarda o nome também para facilitar a exibição nos cards
+                        // guarda o nome também para facilitar a exibição nos cards
                         _nomeMinistranteSelecionado = _listaMinistrantes
                             .firstWhere((m) => m['uid'] == val)['nomeCompleto'];
                       });

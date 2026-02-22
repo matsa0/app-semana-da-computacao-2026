@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/atividade_model.dart';
-import '../perfil/participantes_atividade_screen.dart';
+import '../interacao/participantes_atividade_screen.dart';
 
 class DetalhesAtividadeScreen extends StatefulWidget {
   final Atividade atividade;
@@ -17,6 +17,13 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
   bool _isLoading = false;
   bool _estaInscrito = false;
   bool _isMinistrante = false;
+  final TextEditingController _perguntaController = TextEditingController();
+
+  @override
+  void dispose() {
+    _perguntaController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -165,6 +172,37 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
     );
   }
 
+  Future<void> _enviarPergunta() async {
+  final texto = _perguntaController.text.trim();
+  if (texto.isEmpty) return;
+
+  final user = FirebaseAuth.instance.currentUser;
+  final firestore = FirebaseFirestore.instance;
+
+  try {
+    // Busca o nome do usuário para o palestrante identificar
+    final userDoc = await firestore.collection('usuarios').doc(user!.uid).get();
+    final nome = userDoc.data()?['nome'] ?? 'Anônimo';
+
+    await firestore
+        .collection('atividades')
+        .doc(widget.atividade.id)
+        .collection('perguntas')
+        .add({
+      'usuarioId': user.uid,
+      'nomeUsuario': nome,
+      'texto': texto,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    _perguntaController.clear(); // Só limpa se o envio der certo
+    _mostrarMensagem('Pergunta enviada!', Colors.green);
+  } catch (e) {
+    // Se falhar, o texto continua no controlador (requisito do seu escopo!)
+    _mostrarMensagem('Erro ao enviar. Tente novamente.', Colors.red);
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -248,6 +286,28 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
                         ),
                       ),
               ),
+            if (_estaInscrito && !_isMinistrante && widget.atividade.tipo == 'Palestra') ...[              const Divider(height: 32),
+              const Text('Dúvidas para o palestrante', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _perguntaController,
+                      decoration: const InputDecoration(
+                        hintText: 'Digite sua pergunta...',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.send, color: Color(0xFFB80D48)),
+                    onPressed: _enviarPergunta,
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
