@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/atividade_model.dart';
 import '../interacao/participantes_atividade_screen.dart';
+import '../administracao/checkin_manual_screen.dart';
 
 class DetalhesAtividadeScreen extends StatefulWidget {
   final Atividade atividade;
@@ -18,7 +19,8 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
   bool _estaInscrito = false;
   bool _isMinistrante = false;
   final TextEditingController _perguntaController = TextEditingController();
-
+  bool _isOrganizador = false;
+  
   @override
   void dispose() {
     _perguntaController.dispose();
@@ -47,11 +49,13 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
 
     if (mounted) {
       final userData = usuarioDoc.data();
-      final isMinistranteFirebase = userData?['isMinistrante'] ?? false; // Mudou aqui
+      final isMinistranteFirebase = userData?['isMinistrante'] ?? false; 
+      final isOrganizadorFirebase = userData?['isOrganizador'] ?? false;
 
       setState(() {
         _estaInscrito = inscricaoDoc.exists;
         _isMinistrante = isMinistranteFirebase && user.uid == widget.atividade.ministranteId;
+        _isOrganizador = isOrganizadorFirebase;
       });
     }
   }
@@ -173,35 +177,35 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
   }
 
   Future<void> _enviarPergunta() async {
-  final texto = _perguntaController.text.trim();
-  if (texto.isEmpty) return;
+    final texto = _perguntaController.text.trim();
+    if (texto.isEmpty) return;
 
-  final user = FirebaseAuth.instance.currentUser;
-  final firestore = FirebaseFirestore.instance;
+    final user = FirebaseAuth.instance.currentUser;
+    final firestore = FirebaseFirestore.instance;
 
-  try {
-    // Busca o nome do usuário para o palestrante identificar
-    final userDoc = await firestore.collection('usuarios').doc(user!.uid).get();
-    final nome = userDoc.data()?['nome'] ?? 'Anônimo';
+    try {
+      final userDoc = await firestore.collection('usuarios').doc(user!.uid).get();
+      final nome = userDoc.data()?['nome'] ?? 'Anônimo';
 
-    await firestore
-        .collection('atividades')
-        .doc(widget.atividade.id)
-        .collection('perguntas')
-        .add({
-      'usuarioId': user.uid,
-      'nomeUsuario': nome,
-      'texto': texto,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+      await firestore
+          .collection('atividades')
+          .doc(widget.atividade.id)
+          .collection('perguntas')
+          .add({
+        'usuarioId': user.uid,
+        'nomeUsuario': nome,
+        'texto': texto,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
 
-    _perguntaController.clear(); // Só limpa se o envio der certo
-    _mostrarMensagem('Pergunta enviada!', Colors.green);
-  } catch (e) {
-    // Se falhar, o texto continua no controlador (requisito do seu escopo!)
-    _mostrarMensagem('Erro ao enviar. Tente novamente.', Colors.red);
+      _perguntaController.clear(); 
+      _mostrarMensagem('Pergunta enviada!', Colors.green);
+      
+      if (mounted) FocusScope.of(context).unfocus();
+    } catch (e) {
+      _mostrarMensagem('Erro ao enviar. Tente novamente.', Colors.red);
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -286,7 +290,12 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
                         ),
                       ),
               ),
-            if (_estaInscrito && !_isMinistrante && widget.atividade.tipo == 'Palestra') ...[              const Divider(height: 32),
+
+            // ==========================================
+            // 1. ÁREA DE PERGUNTAS (Exclusivo Palestras)
+            // ==========================================
+            if (_estaInscrito && !_isMinistrante && widget.atividade.tipo == 'Palestra') ...[              
+              const Divider(height: 32),
               const Text('Dúvidas para o palestrante', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Row(
@@ -307,7 +316,44 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
                   ),
                 ],
               ),
+            ], 
+
+            // ==========================================
+            // 2. ÁREA DO ORGANIZADOR (Check-in)
+            // ==========================================
+            if (_isOrganizador) ...[
+              const SizedBox(height: 32), 
+              const Divider(color: Colors.indigo, thickness: 1), 
+              const SizedBox(height: 16),
+              const Center(
+                child: Text(
+                  'Área do Organizador', 
+                  style: TextStyle(fontSize: 14, color: Colors.indigo, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.indigo, 
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CheckinManualScreen(atividade: widget.atividade),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.checklist, color: Colors.white),
+                  label: const Text('Fazer Chamada / Check-in', style: TextStyle(fontSize: 18, color: Colors.white)),
+                ),
+              ),
+              const SizedBox(height: 16),
             ],
+
           ],
         ),
       ),
