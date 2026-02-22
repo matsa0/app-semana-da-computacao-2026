@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/atividade_model.dart';
+import '../perfil/participantes_atividade_screen.dart';
 
 class DetalhesAtividadeScreen extends StatefulWidget {
   final Atividade atividade;
@@ -15,25 +16,36 @@ class DetalhesAtividadeScreen extends StatefulWidget {
 class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
   bool _isLoading = false;
   bool _estaInscrito = false;
+  bool _isMinistrante = false;
 
   @override
   void initState() {
     super.initState();
-    _verificarStatusInscricao();
+    _carregarDados();
   }
 
-  Future<void> _verificarStatusInscricao() async {
+  Future<void> _carregarDados() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final doc = await FirebaseFirestore.instance
+    final inscricaoDoc = await FirebaseFirestore.instance
         .collection('inscricoes')
         .doc('${widget.atividade.id}_${user.uid}')
         .get();
 
+    final usuarioDoc = await FirebaseFirestore.instance
+        .collection('usuarios')
+        .doc(user.uid)
+        .get();
+
     if (mounted) {
+      final userData = usuarioDoc.data();
+      final isPalestrante = userData?['isPalestrante'] ?? false;
+      final nomeCompleto = '${userData?['nome'] ?? ''} ${userData?['sobrenome'] ?? ''}'.trim();
+
       setState(() {
-        _estaInscrito = doc.exists;
+        _estaInscrito = inscricaoDoc.exists;
+        _isMinistrante = isPalestrante && nomeCompleto == widget.atividade.ministrante;
       });
     }
   }
@@ -178,22 +190,43 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _estaInscrito ? Colors.grey[700] : const Color(0xFFB80D48),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+            if (_isMinistrante)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB80D48),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ParticipantesAtividadeScreen(atividade: widget.atividade),
                       ),
-                      onPressed: _processarAcao,
-                      child: Text(
-                        _estaInscrito ? 'Cancelar Inscrição' : 'Inscrever-se',
-                        style: const TextStyle(fontSize: 18, color: Colors.white),
+                    );
+                  },
+                  icon: const Icon(Icons.groups, color: Colors.white),
+                  label: const Text('Ver Participantes', style: TextStyle(fontSize: 18, color: Colors.white)),
+                ),
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _estaInscrito ? Colors.grey[700] : const Color(0xFFB80D48),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        onPressed: _processarAcao,
+                        child: Text(
+                          _estaInscrito ? 'Cancelar Inscrição' : 'Inscrever-se',
+                          style: const TextStyle(fontSize: 18, color: Colors.white),
+                        ),
                       ),
-                    ),
-            ),
+              ),
           ],
         ),
       ),
