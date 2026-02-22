@@ -40,12 +40,11 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
 
     if (mounted) {
       final userData = usuarioDoc.data();
-      final isPalestrante = userData?['isPalestrante'] ?? false;
-      final nomeCompleto = '${userData?['nome'] ?? ''} ${userData?['sobrenome'] ?? ''}'.trim();
+      final isMinistranteFirebase = userData?['isMinistrante'] ?? false; // Mudou aqui
 
       setState(() {
         _estaInscrito = inscricaoDoc.exists;
-        _isMinistrante = isPalestrante && nomeCompleto == widget.atividade.ministrante;
+        _isMinistrante = isMinistranteFirebase && user.uid == widget.atividade.ministranteId;
       });
     }
   }
@@ -73,10 +72,30 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
 
       for (var doc in inscricoesUsuario.docs) {
         final atvInscritaDoc = await firestore.collection('atividades').doc(doc['atividadeId']).get();
+        
         if (atvInscritaDoc.exists) {
-          if (atvInscritaDoc['data'] == widget.atividade.data && 
-              atvInscritaDoc['horario'] == widget.atividade.horario) {
-            throw Exception('Conflito de horário: você já possui uma atividade neste período.');
+          final dataInscrita = atvInscritaDoc['data'];
+          
+          // só verifica conflito se for no mesmo dia
+          if (dataInscrita == widget.atividade.data) {
+            final horarioInscrita = atvInscritaDoc['horario'];
+            // se for uma atividade antiga no banco sem duração assume 60 min para não crashar
+            final duracaoInscrita = atvInscritaDoc.data()?.toString().contains('duracao') == true 
+                ? atvInscritaDoc['duracao'] 
+                : 60; 
+            
+            // calcula o tempo da Nova Atividade (A)
+            final inicioA = _horarioParaMinutos(widget.atividade.horario);
+            final fimA = inicioA + widget.atividade.duracao;
+            
+            // calcula o tempo da Atividade Já Inscrita (B)
+            final inicioB = _horarioParaMinutos(horarioInscrita);
+            final fimB = inicioB + duracaoInscrita;
+            
+            // lógica de conflito
+            if (inicioA < fimB && fimA > inicioB) {
+              throw Exception('Conflito de horário! Você já está inscrito em "${atvInscritaDoc['titulo']}" neste mesmo período.');
+            }
           }
         }
       }
@@ -178,6 +197,8 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
             const SizedBox(height: 8),
             _buildInfoRow(Icons.access_time, 'Horário: ${widget.atividade.horario}'),
             const SizedBox(height: 8),
+            _buildInfoRow(Icons.timer, 'Duração: ${widget.atividade.duracao} minutos'),
+            const SizedBox(height: 8),
             _buildInfoRow(Icons.group, 'Vagas disponíveis: ${widget.atividade.vagas}'),
             const SizedBox(height: 24),
             const Text(
@@ -250,5 +271,15 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
         Expanded(child: Text(text, style: const TextStyle(fontSize: 16))),
       ],
     );
+  }
+
+  int _horarioParaMinutos(String horario) {
+    final partes = horario.split(':');
+    if (partes.length != 2) return 0;
+    
+    final horas = int.tryParse(partes[0]) ?? 0;
+    final minutos = int.tryParse(partes[1]) ?? 0;
+    
+    return (horas * 60) + minutos;
   }
 }

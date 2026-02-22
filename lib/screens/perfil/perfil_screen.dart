@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/usuario_model.dart';
 import 'editar_perfil_screen.dart';
+import '../autenticacao/login_screen.dart';
 
 class PerfilScreen extends StatelessWidget {
   const PerfilScreen({super.key});
@@ -88,6 +89,35 @@ class PerfilScreen extends StatelessWidget {
                   label: const Text(
                     'Editar Perfil',
                     style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    foregroundColor: Colors.red, 
+                    side: const BorderSide(color: Colors.red), // Borda vermelha
+                  ),
+                  onPressed: () async {
+                    // desloga do Firebase
+                    await FirebaseAuth.instance.signOut();
+                    
+                    if (!context.mounted) return;
+                    
+                    // remove todas as telas anteriores e volta pro Login
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      (Route<dynamic> route) => false,
+                    );
+                  },
+                  icon: const Icon(Icons.logout),
+                  label: const Text(
+                    'Sair da Conta',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

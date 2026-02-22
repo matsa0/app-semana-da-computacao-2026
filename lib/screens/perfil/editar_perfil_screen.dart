@@ -12,7 +12,14 @@ class EditarPerfilScreen extends StatefulWidget {
 class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
   final _nomeController = TextEditingController();
   final _sobrenomeController = TextEditingController();
-  final _cursoController = TextEditingController();
+  String? _cursoSelecionado;
+  final List<String> _cursos = [
+    'Sistemas de Informação',
+    'Engenharia de Computação',
+    'Engenharia Elétrica',
+    'Engenharia de Produção',
+    'Outro'
+  ];
   bool _loading = false;
 
   final Color primaryColor = const Color(0xFFB1124C);
@@ -27,7 +34,6 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
   void dispose() {
     _nomeController.dispose();
     _sobrenomeController.dispose();
-    _cursoController.dispose();
     super.dispose();
   }
 
@@ -44,14 +50,18 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
       final data = doc.data()!;
       _nomeController.text = data['nome'] ?? '';
       _sobrenomeController.text = data['sobrenome'] ?? '';
-      _cursoController.text = data['curso'] ?? '';
-    }
+final cursoBanco = data['curso'] ?? '';
+      if (_cursos.contains(cursoBanco)) {
+        setState(() => _cursoSelecionado = cursoBanco);
+      } else if (cursoBanco.isNotEmpty) {
+        setState(() => _cursoSelecionado = 'Outro');
+      }    }
   }
 
   Future<void> _salvar() async {
     final nome = _nomeController.text.trim();
     final sobrenome = _sobrenomeController.text.trim();
-    final curso = _cursoController.text.trim();
+    final curso = _cursoSelecionado ?? '';
 
     if (nome.isEmpty || sobrenome.isEmpty || curso.isEmpty) {
       _showMessage('Preencha todos os campos');
@@ -107,7 +117,25 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
               const SizedBox(height: 16),
               _input('Sobrenome', Icons.person_outline, _sobrenomeController),
               const SizedBox(height: 16),
-              _input('Curso', Icons.school, _cursoController),
+              DropdownButtonFormField<String>(
+                initialValue: _cursoSelecionado,
+                decoration: InputDecoration(
+                  labelText: 'Curso',
+                  prefixIcon: const Icon(Icons.school),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                items: _cursos.map((String curso) {
+                  return DropdownMenuItem<String>(
+                    value: curso,
+                    child: Text(curso),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _cursoSelecionado = newValue;
+                  });
+                },
+              ),
               const SizedBox(height: 32),
               _loading
                   ? const Center(child: CircularProgressIndicator())

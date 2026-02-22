@@ -14,7 +14,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _sobrenomeController = TextEditingController();
-  final TextEditingController _cursoController = TextEditingController();
+  String? _cursoSelecionado;
+  final List<String> _cursos = [
+    'Sistemas de Informação',
+    'Engenharia de Computação',
+    'Engenharia Elétrica',
+    'Engenharia de Produção',
+    'Outro'
+  ];
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
   final TextEditingController _confirmSenhaController = TextEditingController();
@@ -25,7 +32,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _nomeController.dispose();
     _sobrenomeController.dispose();
-    _cursoController.dispose();
     _emailController.dispose();
     _senhaController.dispose();
     _confirmSenhaController.dispose();
@@ -68,7 +74,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
               _input('Sobrenome', Icons.person_outline, controller: _sobrenomeController),
               const SizedBox(height: 12),
 
-              _input('Curso', Icons.school, controller: _cursoController),
+             DropdownButtonFormField<String>(
+                initialValue: _cursoSelecionado,
+                decoration: InputDecoration(
+                  hintText: 'Selecione o seu Curso',
+                  prefixIcon: const Icon(Icons.school),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                items: _cursos.map((String curso) {
+                  return DropdownMenuItem<String>(
+                    value: curso,
+                    child: Text(curso),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _cursoSelecionado = newValue;
+                  });
+                },
+              ),
               const SizedBox(height: 12),
 
               _input('Email', Icons.email, controller: _emailController),
@@ -123,7 +147,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _registrarUsuario() async {
     String nome = _nomeController.text.trim();
     String sobrenome = _sobrenomeController.text.trim();
-    String curso = _cursoController.text.trim();
+    String curso = _cursoSelecionado ?? '';
     String email = _emailController.text.trim();
     String senha = _senhaController.text.trim();
     String confirmSenha = _confirmSenhaController.text.trim();
@@ -159,7 +183,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'email': email,
         'uid': userCredential.user!.uid,
         'isOrganizador': false, 
-        'isPalestrante': false,
+        'isMinistrante': false,
         'criadoEm': FieldValue.serverTimestamp(),
       });
 
