@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../models/atividade_model.dart';
 import 'dart:developer' as dev;
+import '../../models/atividade_model.dart'; 
 
 class CadastrarAtividadeScreen extends StatefulWidget {
-  final Atividade? atividade; 
-  
+  final Atividade? atividade;
+
   const CadastrarAtividadeScreen({super.key, this.atividade});
 
   @override
@@ -14,7 +14,7 @@ class CadastrarAtividadeScreen extends StatefulWidget {
 
 class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   late TextEditingController _tituloController;
   late TextEditingController _ministranteController;
   late TextEditingController _dataController;
@@ -24,27 +24,47 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
   late TextEditingController _duracaoController;
   late TextEditingController _localController;
 
+  DateTime? _dataSelecionada;
+  TimeOfDay? _horarioSelecionado;
+
   String _tipoSelecionado = 'Palestra';
   final List<String> _tipos = ['Palestra', 'Minicurso', 'Oficina'];
   String? _ministranteIdSelecionado;
   String? _nomeMinistranteSelecionado;
   List<Map<String, dynamic>> _listaMinistrantes = [];
   bool _carregandoMinistrantes = true;
-
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     final atv = widget.atividade;
+
+    if (atv != null) {
+      _dataSelecionada = atv.dataHora;
+      _horarioSelecionado = TimeOfDay.fromDateTime(atv.dataHora);
+    }
+
     _tituloController = TextEditingController(text: atv?.titulo ?? '');
     _ministranteController = TextEditingController(text: atv?.ministrante ?? '');
-    _dataController = TextEditingController(text: atv?.data ?? '');
-    _horarioController = TextEditingController(text: atv?.horario ?? '');
+
+    _dataController = TextEditingController(
+      text: _dataSelecionada != null
+          ? "${_dataSelecionada!.day.toString().padLeft(2, '0')}/${_dataSelecionada!.month.toString().padLeft(2, '0')}/${_dataSelecionada!.year}"
+          : '',
+    );
+
+    _horarioController = TextEditingController(
+      text: _horarioSelecionado != null
+          ? "${_horarioSelecionado!.hour.toString().padLeft(2, '0')}:${_horarioSelecionado!.minute.toString().padLeft(2, '0')}"
+          : '',
+    );
+
     _descricaoController = TextEditingController(text: atv?.descricao ?? '');
     _vagasController = TextEditingController(text: atv != null ? atv.vagas.toString() : '');
     _duracaoController = TextEditingController(text: atv != null ? atv.duracao.toString() : '60');
     _localController = TextEditingController(text: atv?.local ?? '');
+
     _buscarMinistrantes();
 
     if (atv != null && _tipos.contains(atv.tipo)) {
@@ -65,49 +85,6 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
     super.dispose();
   }
 
-  Future<void> _salvarAtividade() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      final dados = {
-        'titulo': _tituloController.text.trim(),
-        'tipo': _tipoSelecionado,
-        'ministrante': _nomeMinistranteSelecionado,
-        'ministranteId': _ministranteIdSelecionado,
-        'data': _dataController.text.trim(),
-        'horario': _horarioController.text.trim(),
-        'duracao': int.tryParse(_duracaoController.text.trim()) ?? 60,
-        'descricao': _descricaoController.text.trim(),
-        'vagas': int.tryParse(_vagasController.text.trim()) ?? 0,
-        'local': _localController.text.trim(),
-        if (widget.atividade == null) 'criadoEm': FieldValue.serverTimestamp(),
-      };
-
-      if (widget.atividade == null) {
-        await FirebaseFirestore.instance.collection('atividades').add(dados);
-      } else {
-        await FirebaseFirestore.instance.collection('atividades').doc(widget.atividade!.id).update(dados);
-      }
-
-      if (!mounted) return;
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(widget.atividade == null ? 'Atividade cadastrada!' : 'Atividade atualizada!')),
-      );
-      Navigator.pop(context); 
-      
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao salvar: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
   Future<void> _buscarMinistrantes() async {
     try {
       final snapshot = await FirebaseFirestore.instance
@@ -125,20 +102,67 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
       setState(() {
         _listaMinistrantes = lista;
         _carregandoMinistrantes = false;
-        
-        // se tiver editando, tenta pré-selecionar o ministrante atual
+
         if (widget.atividade != null) {
           _ministranteIdSelecionado = widget.atividade!.ministranteId;
           _nomeMinistranteSelecionado = widget.atividade!.ministrante;
         }
       });
     } catch (e, stackTrace) {
-      dev.log(
-        "Erro ao buscar ministrantes", 
-        error: e, 
-        stackTrace: stackTrace,
-        name: 'CadastrarAtividade'
+      dev.log("Erro ao buscar ministrantes", error: e, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _salvarAtividade() async {
+    if (!_formKey.currentState!.validate()) return;
+    
+    if (_dataSelecionada == null || _horarioSelecionado == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, selecione data e horário.')),
       );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final DateTime dataHoraFinal = DateTime(
+        _dataSelecionada!.year,
+        _dataSelecionada!.month,
+        _dataSelecionada!.day,
+        _horarioSelecionado!.hour,
+        _horarioSelecionado!.minute,
+      );
+
+      final dados = {
+        'titulo': _tituloController.text.trim(),
+        'tipo': _tipoSelecionado,
+        'ministrante': _nomeMinistranteSelecionado,
+        'ministranteId': _ministranteIdSelecionado,
+        'dataHora': dataHoraFinal,
+        'duracao': int.tryParse(_duracaoController.text.trim()) ?? 60,
+        'descricao': _descricaoController.text.trim(),
+        'vagas': int.tryParse(_vagasController.text.trim()) ?? 0,
+        'local': _localController.text.trim(),
+        if (widget.atividade == null) 'criadoEm': FieldValue.serverTimestamp(),
+      };
+
+      if (widget.atividade == null) {
+        await FirebaseFirestore.instance.collection('atividades').add(dados);
+      } else {
+        await FirebaseFirestore.instance.collection('atividades').doc(widget.atividade!.id).update(dados);
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(widget.atividade == null ? 'Atividade cadastrada!' : 'Atividade atualizada!')),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao salvar: $e')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -147,9 +171,7 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
     final bool isEdicao = widget.atividade != null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEdicao ? 'Editar Atividade' : 'Nova Atividade'),
-      ),
+      appBar: AppBar(title: Text(isEdicao ? 'Editar Atividade' : 'Nova Atividade')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -163,55 +185,49 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
                 validator: (val) => val!.isEmpty ? 'Campo obrigatório' : null,
               ),
               const SizedBox(height: 16),
-              
               DropdownButtonFormField<String>(
                 initialValue: _tipoSelecionado,
                 decoration: const InputDecoration(labelText: 'Tipo', border: OutlineInputBorder()),
-                items: _tipos.map((tipo) {
-                  return DropdownMenuItem(value: tipo, child: Text(tipo));
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) setState(() => _tipoSelecionado = val);
-                },
+                items: _tipos.map((tipo) => DropdownMenuItem(value: tipo, child: Text(tipo))).toList(),
+                onChanged: (val) { if (val != null) setState(() => _tipoSelecionado = val); },
               ),
               const SizedBox(height: 16),
-
-              _carregandoMinistrantes 
-                ? const LinearProgressIndicator()
-                : DropdownButtonFormField<String>(
-                    initialValue: _ministranteIdSelecionado,
-                    decoration: const InputDecoration(
-                      labelText: 'Selecionar Ministrante',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.person_search),
+              _carregandoMinistrantes
+                  ? const LinearProgressIndicator()
+                  : DropdownButtonFormField<String>(
+                      initialValue: _ministranteIdSelecionado,
+                      decoration: const InputDecoration(labelText: 'Selecionar Ministrante', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person_search)),
+                      items: _listaMinistrantes.map((m) => DropdownMenuItem(value: m['uid'] as String, child: Text(m['nomeCompleto'] as String))).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _ministranteIdSelecionado = val;
+                          _nomeMinistranteSelecionado = _listaMinistrantes.firstWhere((m) => m['uid'] == val)['nomeCompleto'];
+                        });
+                      },
+                      validator: (val) => val == null ? 'Selecione um ministrante' : null,
                     ),
-                    items: _listaMinistrantes.map((m) {
-                      return DropdownMenuItem<String>(
-                        value: m['uid'],
-                        child: Text(m['nomeCompleto']),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      setState(() {
-                        _ministranteIdSelecionado = val;
-                        _nomeMinistranteSelecionado = _listaMinistrantes
-                            .firstWhere((m) => m['uid'] == val)['nomeCompleto'];
-                      });
-                    },
-                    validator: (val) => val == null ? 'Selecione um ministrante' : null,
-                  ),
               const SizedBox(height: 16),
-
               Row(
                 children: [
                   Expanded(
                     child: TextFormField(
                       controller: _dataController,
-                      decoration: const InputDecoration(
-                        labelText: 'Data (ex: 15/10)', 
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.calendar_today),
-                      ),
+                      readOnly: true,
+                      decoration: const InputDecoration(labelText: 'Data', border: OutlineInputBorder(), prefixIcon: Icon(Icons.calendar_today)),
+                      onTap: () async {
+                        final data = await showDatePicker(
+                          context: context,
+                          initialDate: _dataSelecionada ?? DateTime.now(),
+                          firstDate: DateTime(2026, 1, 1),
+                          lastDate: DateTime(2026, 12, 31),
+                        );
+                        if (data != null) {
+                          setState(() {
+                            _dataSelecionada = data;
+                            _dataController.text = "${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}";
+                          });
+                        }
+                      },
                       validator: (val) => val!.isEmpty ? 'Campo obrigatório' : null,
                     ),
                   ),
@@ -220,22 +236,16 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
                     child: TextFormField(
                       controller: _horarioController,
                       readOnly: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Horário', 
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.access_time),
-                      ),
+                      decoration: const InputDecoration(labelText: 'Horário', border: OutlineInputBorder(), prefixIcon: Icon(Icons.access_time)),
                       onTap: () async {
-                        // Abre o reloginho padrão do celular
-                        final TimeOfDay? horarioEscolhido = await showTimePicker(
+                        final hora = await showTimePicker(
                           context: context,
-                          initialTime: TimeOfDay.now(),
+                          initialTime: _horarioSelecionado ?? TimeOfDay.now(),
                         );
-                        if (horarioEscolhido != null && mounted) {
-                          // Formata para ficar sempre "HH:MM"
-                          final horaFormatada = '${horarioEscolhido.hour.toString().padLeft(2, '0')}:${horarioEscolhido.minute.toString().padLeft(2, '0')}';
+                        if (hora != null) {
                           setState(() {
-                            _horarioController.text = horaFormatada;
+                            _horarioSelecionado = hora;
+                            _horarioController.text = "${hora.hour.toString().padLeft(2, '0')}:${hora.minute.toString().padLeft(2, '0')}";
                           });
                         }
                       },
@@ -245,7 +255,6 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _localController,
                 decoration: const InputDecoration(
@@ -255,7 +264,6 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _vagasController,
                 decoration: const InputDecoration(labelText: 'Quantidade de Vagas', border: OutlineInputBorder()),
@@ -263,33 +271,23 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
                 validator: (val) => val!.isEmpty ? 'Campo obrigatório' : null,
               ),
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _duracaoController,
-                decoration: const InputDecoration(
-                  labelText: 'Duração (em minutos)', 
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.timer),
-                ),
+                decoration: const InputDecoration(labelText: 'Duração (minutos)', border: OutlineInputBorder(), prefixIcon: Icon(Icons.timer)),
                 keyboardType: TextInputType.number,
                 validator: (val) => val!.isEmpty ? 'Campo obrigatório' : null,
               ),
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _descricaoController,
                 decoration: const InputDecoration(labelText: 'Descrição', border: OutlineInputBorder()),
                 maxLines: 4,
               ),
               const SizedBox(height: 24),
-
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFB80D48),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB80D48), padding: const EdgeInsets.symmetric(vertical: 16)),
                       onPressed: _salvarAtividade,
                       child: Text(isEdicao ? 'Salvar Alterações' : 'Salvar Atividade', style: const TextStyle(fontSize: 16, color: Colors.white)),
                     ),

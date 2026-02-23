@@ -81,35 +81,32 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
           .where('usuarioId', isEqualTo: user.uid)
           .get();
 
-      for (var doc in inscricoesUsuario.docs) {
-        final atvInscritaDoc = await firestore.collection('atividades').doc(doc['atividadeId']).get();
+      final inicioAtividade = widget.atividade.dataHora;
+      final fimAtividade = inicioAtividade.add(Duration(minutes: widget.atividade.duracao));
+
+    for (var doc in inscricoesUsuario.docs) {
+      final atvInscritaDoc = await firestore.collection('atividades').doc(doc['atividadeId']).get();
+      
+      if (atvInscritaDoc.exists) {
+        final dadosBD = atvInscritaDoc.data() as Map<String, dynamic>;
         
-        if (atvInscritaDoc.exists) {
-          final dataInscrita = atvInscritaDoc['data'];
-          
-          // só verifica conflito se for no mesmo dia
-          if (dataInscrita == widget.atividade.data) {
-            final horarioInscrita = atvInscritaDoc['horario'];
-            // se for uma atividade antiga no banco sem duração assume 60 min para não crashar
-            final duracaoInscrita = atvInscritaDoc.data()?.toString().contains('duracao') == true 
-                ? atvInscritaDoc['duracao'] 
-                : 60; 
-            
-            // calcula o tempo da Nova Atividade (A)
-            final inicioA = _horarioParaMinutos(widget.atividade.horario);
-            final fimA = inicioA + widget.atividade.duracao;
-            
-            // calcula o tempo da Atividade Já Inscrita (B)
-            final inicioB = _horarioParaMinutos(horarioInscrita);
-            final fimB = inicioB + duracaoInscrita;
-            
-            // lógica de conflito
-            if (inicioA < fimB && fimA > inicioB) {
-              throw Exception('Conflito de horário! Você já está inscrito em "${atvInscritaDoc['titulo']}" neste mesmo período.');
-            }
-          }
+        // extrai o Timestamp do Firebase e converte para DateTime
+        final DateTime inicioB = (dadosBD['dataHora'] as Timestamp).toDate();
+        final int duracaoB = dadosBD['duracao'] ?? 60;
+        final DateTime fimB = inicioB.add(Duration(minutes: duracaoB));
+
+        // duas atividades conflitam se: (Início A < Fim B) e (Fim A > Início B)
+        bool temConflito = inicioAtividade.isBefore(fimB) && fimAtividade.isAfter(inicioB);
+
+        if (temConflito) {
+          throw Exception(
+            'Conflito de horário! Você já está inscrito em "${dadosBD['titulo']}" que ocorre das '
+            '${inicioB.hour.toString().padLeft(2, '0')}:${inicioB.minute.toString().padLeft(2, '0')} até '
+            '${fimB.hour.toString().padLeft(2, '0')}:${fimB.minute.toString().padLeft(2, '0')}.'
+          );
         }
       }
+    }
 
       final atividadeRef = firestore.collection('atividades').doc(widget.atividade.id);
       final inscricaoRef = firestore.collection('inscricoes').doc('${widget.atividade.id}_${user.uid}');
@@ -235,9 +232,15 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
             const SizedBox(height: 16),
             _buildInfoRow(Icons.person, 'Ministrante: ${widget.atividade.ministrante}'),
             const SizedBox(height: 8),
-            _buildInfoRow(Icons.calendar_today, 'Data: ${widget.atividade.data}'),
+            _buildInfoRow(
+              Icons.calendar_today, 
+              'Data: ${widget.atividade.dataHora.day.toString().padLeft(2, '0')}/${widget.atividade.dataHora.month.toString().padLeft(2, '0')}/${widget.atividade.dataHora.year}'
+            ),
             const SizedBox(height: 8),
-            _buildInfoRow(Icons.access_time, 'Horário: ${widget.atividade.horario}'),
+            _buildInfoRow(
+              Icons.access_time, 
+              'Horário: ${widget.atividade.dataHora.hour.toString().padLeft(2, '0')}:${widget.atividade.dataHora.minute.toString().padLeft(2, '0')}'
+            ),
             const SizedBox(height: 8),
             _buildInfoRow(Icons.timer, 'Duração: ${widget.atividade.duracao} minutos'),
             const SizedBox(height: 8),
@@ -286,10 +289,15 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
                           backgroundColor: _estaInscrito ? Colors.grey[700] : const Color(0xFFB80D48),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        onPressed: _processarAcao,
+                        // se não está inscrito e (atividade já iniciou ou encerrou), desativa passando null
+                        onPressed: (!_estaInscrito && (widget.atividade.atividadeAcontecendo || widget.atividade.atividadeEncerrada))
+                          ? null 
+                          : _processarAcao,
                         child: Text(
-                          _estaInscrito ? 'Cancelar Inscrição' : 'Inscrever-se',
-                          style: const TextStyle(fontSize: 18, color: Colors.white),
+                          (!_estaInscrito && (widget.atividade.atividadeAcontecendo || widget.atividade.atividadeEncerrada))
+                            ? 'Inscrições encerradas' 
+                            : (_estaInscrito ? 'Cancelar Inscrição' : 'Inscrever-se'),
+                        style: const TextStyle(fontSize: 18, color: Colors.white),
                         ),
                       ),
               ),
