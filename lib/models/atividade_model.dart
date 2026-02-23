@@ -5,8 +5,7 @@ class Atividade {
   final String tipo;
   final String ministrante;
   final String ministranteId;
-  final String data;
-  final String horario;
+  final DateTime dataHora;
   final int duracao; 
   final String descricao;
   final int vagas;
@@ -17,8 +16,7 @@ class Atividade {
     required this.tipo,
     required this.ministrante,
     required this.ministranteId,
-    required this.data,
-    required this.horario,
+    required this.dataHora,
     this.duracao = 60,
     this.descricao = '',
     this.vagas = 0,
@@ -32,11 +30,29 @@ class Atividade {
       tipo: data['tipo'] ?? '',
       ministrante: data['ministrante'] ?? '',
       ministranteId: data['ministranteId'] ?? '',
-      data: data['data'] ?? '',
-      horario: data['horario'] ?? '',
+      dataHora: (data['dataHora'] as Timestamp?)?.toDate() ?? DateTime.now(),
       duracao: data['duracao'] ?? 60,
       descricao: data['descricao'] ?? '',
       vagas: data['vagas'] ?? 0,
     );
   }
+
+  bool get atividadeProxima {
+    final agora = DateTime.now();
+    final diferenca = dataHora.difference(agora);
+    return !diferenca.isNegative && diferenca.inMinutes <= 30; 
+  }
+
+  bool get atividadeAcontecendo {
+    final agora = DateTime.now();
+    final fim = dataHora.add(Duration(minutes: duracao));
+    return agora.isAfter(dataHora) && agora.isBefore(fim);
+  }
+
+  bool get atividadeEncerrada => DateTime.now().isAfter(dataHora.add(Duration(minutes: duracao)));
+
+  String get dataFormatada => "${dataHora.day.toString().padLeft(2, '0')}/${dataHora.month.toString().padLeft(2, '0')}/${dataHora.year}";
+  String get horarioFormatado => "${dataHora.hour.toString().padLeft(2, '0')}:${dataHora.minute.toString().padLeft(2, '0')}";
+
+
 }
