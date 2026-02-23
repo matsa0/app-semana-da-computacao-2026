@@ -85,6 +85,9 @@ class AtividadeCard extends StatelessWidget {
             Text('Ministrante: ${atividade.ministrante}'),
             Text('Data: ${atividade.data}'),
             Text('Horário: ${atividade.horario}'),
+            if (atividade.local.isNotEmpty)
+              Text('Local: ${atividade.local}'),
+            Text('Vagas: ${atividade.vagas}'),
             const SizedBox(height: 8),
             ElevatedButton(
               onPressed: onPressed,

@@ -22,6 +22,7 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
   late TextEditingController _descricaoController;
   late TextEditingController _vagasController;
   late TextEditingController _duracaoController;
+  late TextEditingController _localController;
 
   String _tipoSelecionado = 'Palestra';
   final List<String> _tipos = ['Palestra', 'Minicurso', 'Oficina'];
@@ -43,6 +44,7 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
     _descricaoController = TextEditingController(text: atv?.descricao ?? '');
     _vagasController = TextEditingController(text: atv != null ? atv.vagas.toString() : '');
     _duracaoController = TextEditingController(text: atv != null ? atv.duracao.toString() : '60');
+    _localController = TextEditingController(text: atv?.local ?? '');
     _buscarMinistrantes();
 
     if (atv != null && _tipos.contains(atv.tipo)) {
@@ -59,6 +61,7 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
     _descricaoController.dispose();
     _vagasController.dispose();
     _duracaoController.dispose();
+    _localController.dispose();
     super.dispose();
   }
 
@@ -71,13 +74,14 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
       final dados = {
         'titulo': _tituloController.text.trim(),
         'tipo': _tipoSelecionado,
-        'ministrante': _nomeMinistranteSelecionado, // Nome para exibição rápida
-        'ministranteId': _ministranteIdSelecionado, // UID para segurança
+        'ministrante': _nomeMinistranteSelecionado,
+        'ministranteId': _ministranteIdSelecionado,
         'data': _dataController.text.trim(),
         'horario': _horarioController.text.trim(),
         'duracao': int.tryParse(_duracaoController.text.trim()) ?? 60,
         'descricao': _descricaoController.text.trim(),
         'vagas': int.tryParse(_vagasController.text.trim()) ?? 0,
+        'local': _localController.text.trim(),
         if (widget.atividade == null) 'criadoEm': FieldValue.serverTimestamp(),
       };
 
@@ -108,7 +112,7 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('usuarios')
-          .where('isMinistrante', isEqualTo: true) // Busca só quem é ministrante
+          .where('isMinistrante', isEqualTo: true)
           .get();
 
       final lista = snapshot.docs.map((doc) {
@@ -190,7 +194,6 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
                     onChanged: (val) {
                       setState(() {
                         _ministranteIdSelecionado = val;
-                        // guarda o nome também para facilitar a exibição nos cards
                         _nomeMinistranteSelecionado = _listaMinistrantes
                             .firstWhere((m) => m['uid'] == val)['nomeCompleto'];
                       });
@@ -212,11 +215,11 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
                       validator: (val) => val!.isEmpty ? 'Campo obrigatório' : null,
                     ),
                   ),
-              const SizedBox(width: 16),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: TextFormField(
                       controller: _horarioController,
-                      readOnly: true, // Impede digitação livre
+                      readOnly: true,
                       decoration: const InputDecoration(
                         labelText: 'Horário', 
                         border: OutlineInputBorder(),
@@ -240,6 +243,16 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _localController,
+                decoration: const InputDecoration(
+                  labelText: 'Local',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.location_on),
+                ),
               ),
               const SizedBox(height: 16),
 

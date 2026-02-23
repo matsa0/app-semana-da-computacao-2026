@@ -242,6 +242,9 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
             _buildInfoRow(Icons.timer, 'Duração: ${widget.atividade.duracao} minutos'),
             const SizedBox(height: 8),
             _buildInfoRow(Icons.group, 'Vagas disponíveis: ${widget.atividade.vagas}'),
+            const SizedBox(height: 8),
+            if (widget.atividade.local.isNotEmpty)
+              _buildInfoRow(Icons.location_on, 'Local: ${widget.atividade.local}'),
             const SizedBox(height: 24),
             const Text(
               'Descrição',
