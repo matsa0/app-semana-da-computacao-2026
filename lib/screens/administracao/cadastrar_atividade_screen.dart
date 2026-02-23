@@ -22,8 +22,8 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
   late TextEditingController _descricaoController;
   late TextEditingController _vagasController;
   late TextEditingController _duracaoController;
+  late TextEditingController _localController;
 
-  // variáveis que irão armazenar separadamente a data e a hora selecionadas, para facilitar a manipulação
   DateTime? _dataSelecionada;
   TimeOfDay? _horarioSelecionado;
 
@@ -40,7 +40,6 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
     super.initState();
     final atv = widget.atividade;
 
-    // caso seja edição, extrai DateTime e TimeOfDay do objeto existente
     if (atv != null) {
       _dataSelecionada = atv.dataHora;
       _horarioSelecionado = TimeOfDay.fromDateTime(atv.dataHora);
@@ -49,7 +48,6 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
     _tituloController = TextEditingController(text: atv?.titulo ?? '');
     _ministranteController = TextEditingController(text: atv?.ministrante ?? '');
 
-    // inicializa os textos dos controllers baseados nos objetos de data/hora
     _dataController = TextEditingController(
       text: _dataSelecionada != null
           ? "${_dataSelecionada!.day.toString().padLeft(2, '0')}/${_dataSelecionada!.month.toString().padLeft(2, '0')}/${_dataSelecionada!.year}"
@@ -65,6 +63,7 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
     _descricaoController = TextEditingController(text: atv?.descricao ?? '');
     _vagasController = TextEditingController(text: atv != null ? atv.vagas.toString() : '');
     _duracaoController = TextEditingController(text: atv != null ? atv.duracao.toString() : '60');
+    _localController = TextEditingController(text: atv?.local ?? '');
 
     _buscarMinistrantes();
 
@@ -82,6 +81,7 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
     _descricaoController.dispose();
     _vagasController.dispose();
     _duracaoController.dispose();
+    _localController.dispose();
     super.dispose();
   }
 
@@ -126,7 +126,6 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // combina a data e a hora selecionadas em um único DateTime para se adaptar ao modelo de dados
       final DateTime dataHoraFinal = DateTime(
         _dataSelecionada!.year,
         _dataSelecionada!.month,
@@ -140,10 +139,11 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
         'tipo': _tipoSelecionado,
         'ministrante': _nomeMinistranteSelecionado,
         'ministranteId': _ministranteIdSelecionado,
-        'dataHora': dataHoraFinal, // Enviado como Timestamp para o Firestore
+        'dataHora': dataHoraFinal,
         'duracao': int.tryParse(_duracaoController.text.trim()) ?? 60,
         'descricao': _descricaoController.text.trim(),
         'vagas': int.tryParse(_vagasController.text.trim()) ?? 0,
+        'local': _localController.text.trim(),
         if (widget.atividade == null) 'criadoEm': FieldValue.serverTimestamp(),
       };
 
@@ -253,6 +253,15 @@ class _CadastrarAtividadeScreenState extends State<CadastrarAtividadeScreen> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _localController,
+                decoration: const InputDecoration(
+                  labelText: 'Local',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.location_on),
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(

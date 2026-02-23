@@ -9,6 +9,7 @@ class Atividade {
   final int duracao; 
   final String descricao;
   final int vagas;
+    final String local;
 
   Atividade({
     required this.id,
@@ -20,6 +21,7 @@ class Atividade {
     this.duracao = 60,
     this.descricao = '',
     this.vagas = 0,
+    this.local = '',
   });
 
   factory Atividade.fromFirestore(DocumentSnapshot doc) {
@@ -34,6 +36,7 @@ class Atividade {
       duracao: data['duracao'] ?? 60,
       descricao: data['descricao'] ?? '',
       vagas: data['vagas'] ?? 0,
+      local: data['local'] ?? '',
     );
   }
 

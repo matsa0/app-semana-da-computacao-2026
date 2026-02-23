@@ -35,15 +35,13 @@ class AtividadeCard extends StatelessWidget {
         tipoColor = Colors.grey;
     }
 
-
-
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: atividade.atividadeEncerrada
-          ? const BorderSide(color: Colors.grey, width: 1) // Borda cinza se encerrada
+          ? const BorderSide(color: Colors.grey, width: 1)
           : (atividade.atividadeProxima || atividade.atividadeAcontecendo
               ? BorderSide(
                   color: atividade.atividadeAcontecendo ? Colors.green : const Color(0xFFB80D48), 
@@ -133,6 +131,9 @@ class AtividadeCard extends StatelessWidget {
                     fontWeight: atividade.atividadeProxima ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
+                if (atividade.local.isNotEmpty)
+                  Text('Local: ${atividade.local}'),
+                Text('Vagas: ${atividade.vagas}'),
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
