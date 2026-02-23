@@ -84,8 +84,8 @@ class _BuscarAtividadeScreenState extends State<BuscarAtividadeScreen> {
                     return ListTile(
                       leading: const Icon(Icons.event_note, color: Color(0xFFB80D48), size: 38),
                       title: Text(atividade.titulo),
-                      titleTextStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFB80D48)),
-                      subtitle: Text("Ministrante: ${atividade.ministrante}\nData: ${atividade.data} • Horário: ${atividade.horario}"),
+                      titleTextStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                      subtitle: Text("Ministrante: ${atividade.ministrante}\nData: ${atividade.dataFormatada} • Horário: ${atividade.horarioFormatado}"),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                       
                       // ao clicar no resultado exibido

@@ -19,6 +19,7 @@ class AtividadeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     Color tipoColor;
     switch (atividade.tipo) {
       case 'Palestra':
@@ -34,67 +35,120 @@ class AtividadeCard extends StatelessWidget {
         tipoColor = Colors.grey;
     }
 
+
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: atividade.atividadeEncerrada
+          ? const BorderSide(color: Colors.grey, width: 1) // Borda cinza se encerrada
+          : (atividade.atividadeProxima || atividade.atividadeAcontecendo
+              ? BorderSide(
+                  color: atividade.atividadeAcontecendo ? Colors.green : const Color(0xFFB80D48), 
+                  width: 2,
+                )
+              : BorderSide.none),
+      ),
+
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (atividade.atividadeAcontecendo || atividade.atividadeProxima || atividade.atividadeEncerrada)
+            Container(
+              width: double.infinity,
+              color: atividade.atividadeEncerrada
+                  ? Colors.grey
+                  : (atividade.atividadeAcontecendo ? Colors.green : const Color(0xFFB80D48)),
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                atividade.atividadeEncerrada ? 'ENCERRADA' : (atividade.atividadeAcontecendo ? 'ACONTECENDO AGORA!' : 'COMEÇA EM BREVE'),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.1,
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: tipoColor,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    atividade.tipo,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: tipoColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        atividade.tipo,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    if (isOrganizador)
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.blue),
+                            onPressed: onEdit,
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                          const SizedBox(width: 12),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: onDelete,
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  atividade.titulo,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text('Ministrante: ${atividade.ministrante}'),
+                Text(
+                  'Data: ${atividade.dataFormatada}',
+                  style: TextStyle(
+                    color: atividade.atividadeProxima ? const Color(0xFFB80D48) : Colors.black87,
+                    fontWeight: atividade.atividadeProxima ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
-                if (isOrganizador)
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: onEdit,
-                        constraints: const BoxConstraints(),
-                        padding: EdgeInsets.zero,
-                      ),
-                      const SizedBox(width: 12),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: onDelete,
-                        constraints: const BoxConstraints(),
-                        padding: EdgeInsets.zero,
-                      ),
-                    ],
+                Text(
+                  'Horário: ${atividade.horarioFormatado}',
+                  style: TextStyle(
+                    color: atividade.atividadeProxima ? const Color(0xFFB80D48) : Colors.black87,
+                    fontWeight: atividade.atividadeProxima ? FontWeight.bold : FontWeight.normal,
                   ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: onPressed,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFB80D48),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                    ),
+                    child: const Text('Ver mais', style: TextStyle(color: Colors.white)),
+                  ),
+                )
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              atividade.titulo,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text('Ministrante: ${atividade.ministrante}'),
-            Text('Data: ${atividade.data}'),
-            Text('Horário: ${atividade.horario}'),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: onPressed,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFB80D48),
-              ),
-              child: const Text('Ver mais', style: TextStyle(color: Colors.white)),
-            )
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
