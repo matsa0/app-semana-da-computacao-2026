@@ -39,6 +39,8 @@ class _TelaInicialState extends State<TelaInicial> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Atividades'),
@@ -91,68 +93,73 @@ class _TelaInicialState extends State<TelaInicial> {
           ),
           const SizedBox(height: 16),
           Expanded(
+            // --- BUSCA AS INSCRIÇÕES DO USUÁRIO ---
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('atividades').snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+              stream: FirebaseFirestore.instance
+                  .collection('inscricoes')
+                  .where('usuarioId', isEqualTo: user?.uid)
+                  .snapshots(),
+              builder: (context, snapshotInscricoes) {
+                // Criamos uma lista de IDs das atividades que o usuário já se inscreveu
+                List<String> atividadeIdsInscritas = [];
+                if (snapshotInscricoes.hasData) {
+                  atividadeIdsInscritas = snapshotInscricoes.data!.docs
+                      .map((doc) => doc['atividadeId'] as String)
+                      .toList();
                 }
 
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text('Nenhuma atividade encontrada.'));
-                }
+                // --- SEGUNDO STREAM: BUSCA TODAS AS ATIVIDADES ---
+                return StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance.collection('atividades').snapshots(),
+                  builder: (context, snapshotAtividades) {
+                    if (snapshotAtividades.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                final atividades = snapshot.data!.docs.map((doc) => Atividade.fromFirestore(doc)).toList();
+                    if (!snapshotAtividades.hasData || snapshotAtividades.data!.docs.isEmpty) {
+                      return const Center(child: Text('Nenhuma atividade encontrada.'));
+                    }
 
-                final atividadesFiltradas = filtroSelecionado == 'Todos'
-                    ? atividades
-                    : atividades.where((a) => a.tipo == filtroSelecionado).toList();
+                    final atividades = snapshotAtividades.data!.docs
+                        .map((doc) => Atividade.fromFirestore(doc))
+                        .toList();
 
-                return ListView.builder(
-                  itemCount: atividadesFiltradas.length,
-                  itemBuilder: (context, index) {
-                    final atividadeAtual = atividadesFiltradas[index];
-                    
-                    return AtividadeCard(
-                      atividade: atividadeAtual,
-                      isOrganizador: _isOrganizador, // Passa a permissão para o card
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => DetalhesAtividadeScreen(atividade: atividadeAtual),
-                          ),
-                        );
-                      },
-                      onEdit: () {
-                        // Navega para a tela de cadastro, mas passando a atividade atual
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CadastrarAtividadeScreen(atividade: atividadeAtual),
-                          ),
-                        );
-                      },
-                      onDelete: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Excluir Atividade'),
-                            content: Text('Tem certeza que deseja excluir "${atividadeAtual.titulo}"?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('Cancelar'),
+                    final atividadesFiltradas = filtroSelecionado == 'Todos'
+                        ? atividades
+                        : atividades.where((a) => a.tipo == filtroSelecionado).toList();
+
+                    return ListView.builder(
+                      itemCount: atividadesFiltradas.length,
+                      itemBuilder: (context, index) {
+                        final atividadeAtual = atividadesFiltradas[index];
+                        
+                        // VERIFICAÇÃO: Se o ID desta atividade está na lista de inscrições
+                        final bool jaInscrito = atividadeIdsInscritas.contains(atividadeAtual.id);
+
+                        return AtividadeCard(
+                          atividade: atividadeAtual,
+                          isOrganizador: _isOrganizador,
+                          estaInscrito: jaInscrito, // <--- NOVA PROPRIEDADE PASSADA AO CARD
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DetalhesAtividadeScreen(atividade: atividadeAtual),
                               ),
-                              TextButton(
-                                onPressed: () async {
-                                  Navigator.pop(context); 
-                                  await FirebaseFirestore.instance.collection('atividades').doc(atividadeAtual.id).delete();
-                                },
-                                child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+                            );
+                          },
+                          onEdit: () {
+                            // Navega para a tela de cadastro, mas passando a atividade atual
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CadastrarAtividadeScreen(atividade: atividadeAtual),
                               ),
-                            ],
-                          ),
+                            );
+                          },
+                          onDelete: () {
+                            _confirmarExclusao(context, atividadeAtual);
+                          },
                         );
                       },
                     );
@@ -160,6 +167,30 @@ class _TelaInicialState extends State<TelaInicial> {
                 );
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Método auxiliar para organizar o código de exclusão
+  void _confirmarExclusao(BuildContext context, Atividade atividade) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir Atividade'),
+        content: Text('Tem certeza que deseja excluir "${atividade.titulo}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); 
+              await FirebaseFirestore.instance.collection('atividades').doc(atividade.id).delete();
+            },
+            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
