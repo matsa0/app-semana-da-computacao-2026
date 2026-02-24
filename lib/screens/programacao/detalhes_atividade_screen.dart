@@ -322,16 +322,14 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
             else
               Column(
                 children: [
-                  // 👇 NOVO BOTÃO DE INGRESSO 👇
                   if (_estaInscrito) ...[
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green, // Verde para indicar passagem livre!
+                          backgroundColor: Colors.green, 
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        // O botão do QR Code só precisa chamar a função de mostrar o código
                         onPressed: _mostrarQRCode,
                         icon: const Icon(Icons.qr_code_2, color: Colors.white),
                         label: const Text(
@@ -414,16 +412,24 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
                     backgroundColor: Colors.indigo, 
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CheckinManualScreen(atividade: widget.atividade),
-                      ),
-                    );
-                  },
+                  
+                  onPressed: widget.atividade.atividadeEncerrada
+                      ? null // desabilita o botão se já encerrou
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CheckinManualScreen(atividade: widget.atividade),
+                            ),
+                          );
+                        },
                   icon: const Icon(Icons.checklist, color: Colors.white),
-                  label: const Text('Fazer Chamada / Check-in', style: TextStyle(fontSize: 18, color: Colors.white)),
+                  label: Text(
+                    widget.atividade.atividadeEncerrada 
+                      ? 'Check-in indisponível (Atividade encerrada)' 
+                        : 'Fazer Check-in', 
+                    style: const TextStyle(fontSize: 18, color: Colors.white)
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -452,15 +458,5 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
         Expanded(child: Text(text, style: const TextStyle(fontSize: 16))),
       ],
     );
-  }
-
-  int _horarioParaMinutos(String horario) {
-    final partes = horario.split(':');
-    if (partes.length != 2) return 0;
-    
-    final horas = int.tryParse(partes[0]) ?? 0;
-    final minutos = int.tryParse(partes[1]) ?? 0;
-    
-    return (horas * 60) + minutos;
   }
 }

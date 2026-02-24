@@ -19,6 +19,25 @@ class AtividadeCard extends StatelessWidget {
     this.onDelete,
   });
 
+  // Widget auxiliar para criar os ícones pequenos e organizados
+  Widget _buildSmallInfo(IconData icon, String text, {Color? color}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: color ?? Colors.grey[600]),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 13,
+            color: color ?? Colors.grey[800],
+            fontWeight: color != null ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -125,14 +144,14 @@ class AtividadeCard extends StatelessWidget {
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                            icon: const Icon(Icons.edit, color: Color.fromARGB(255, 61, 85, 104), size: 20),
                             onPressed: onEdit,
                             constraints: const BoxConstraints(),
                             padding: EdgeInsets.zero,
                           ),
                           const SizedBox(width: 12),
                           IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                            icon: const Icon(Icons.delete, color: Color.fromARGB(255, 108, 56, 53), size: 20),
                             onPressed: onDelete,
                             constraints: const BoxConstraints(),
                             padding: EdgeInsets.zero,
@@ -186,5 +205,6 @@ class AtividadeCard extends StatelessWidget {
         ],
       ),
     );
+    
   }
 }
