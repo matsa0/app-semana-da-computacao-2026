@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:sec_application/screens/administracao/gerenciar_permissoes_screen.dart';
 import '../../widgets/atividade_card.dart';
 import '../../models/atividade_model.dart';
 import '../screens/programacao/detalhes_atividade_screen.dart';
@@ -63,21 +64,28 @@ class _TelaInicialState extends State<TelaInicial> {
           ],
         ),
         actions: [
-          if (_isOrganizador)
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: IconButton(
-                icon: const Icon(Icons.add_circle_outline, color: Colors.white, size: 28),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CadastrarAtividadeScreen(),
-                    ),
-                  );
-                },
-              ),
+          if (_isOrganizador) ...[
+            IconButton(
+              icon: const Icon(Icons.bookmark_add),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CadastrarAtividadeScreen(),
+                  ),
+                );
+              },
             ),
+            IconButton(
+              icon: const Icon(Icons.manage_accounts),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const GerenciarPermissoesScreen()),
+                );
+              },
+            )
+          ]// botão só aparece se isso for verdadiero
         ],
       ),
       body: Column(

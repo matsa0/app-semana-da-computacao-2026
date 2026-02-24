@@ -88,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final senha = _senhaController.text.trim();
 
     if (email.isEmpty || senha.isEmpty) {
-      _showMessage('Preencha todos os campos');
+      _showMessage('Preencha todos os campos!');
       return;
     }
 
@@ -103,11 +103,11 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return; 
 
       Navigator.pushReplacementNamed(context, '/base');
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException {
       
       if (!mounted) return;
       
-      _showMessage(e.message ?? 'Erro ao logar');
+      _showMessage('Senha ou email inválidos!');
     } finally {
       if (mounted) {
         setState(() => _loading = false);
@@ -118,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showMessage(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
+      SnackBar(content: Text(msg), backgroundColor: Colors.red)
     );
   }
 }
