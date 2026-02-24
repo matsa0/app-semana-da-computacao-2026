@@ -11,15 +11,42 @@ class MinhasAtividadesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    
+
     if (user == null) {
       return const Center(child: Text('Usuário não logado.'));
     }
 
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          toolbarHeight: 0, 
+          bottom: const TabBar(
+            indicatorColor: Colors.white,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            tabs: [
+              Tab(text: 'Vou Assistir', icon: Icon(Icons.bookmark_outline)),
+              Tab(text: 'Vou Ministrar', icon: Icon(Icons.co_present)),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildAbaInscricoes(user.uid),
+            _buildAbaMinistrante(user.uid),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- ABA 1: ATIVIDADES INSCRITAS (Vou Assistir) ---
+  Widget _buildAbaInscricoes(String userId) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('inscricoes')
-          .where('usuarioId', isEqualTo: user.uid)
+          .where('usuarioId', isEqualTo: userId)
           .snapshots(),
       builder: (context, snapshotInscricoes) {
         if (snapshotInscricoes.connectionState == ConnectionState.waiting) {
@@ -27,29 +54,7 @@ class MinhasAtividadesScreen extends StatelessWidget {
         }
 
         if (!snapshotInscricoes.hasData || snapshotInscricoes.data!.docs.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Nenhuma atividade encontrada',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFB80D48),
-                  ),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Navegue até a aba "Início" para ver a programação.')),
-                    );
-                  },
-                  child: const Text('Ver Programação Completa', style: TextStyle(color: Colors.white)),
-                )
-              ],
-            ),
-          );
+          return _buildEmptyState(context, 'Você não possui inscrições.');
         }
 
         final atividadeIds = snapshotInscricoes.data!.docs
@@ -63,36 +68,88 @@ class MinhasAtividadesScreen extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (!snapshotAtividades.hasData) {
-              return const Center(child: Text('Erro ao carregar os dados das atividades.'));
-            }
-
+            if (!snapshotAtividades.hasData) return const SizedBox();
             final atividadesInscritas = snapshotAtividades.data!.docs
                 .map((doc) => Atividade.fromFirestore(doc))
                 .where((atividade) => atividadeIds.contains(atividade.id))
                 .toList();
 
-            return ListView.builder(
-              itemCount: atividadesInscritas.length,
-              itemBuilder: (context, index) {
-                return AtividadeCard(
-                  atividade: atividadesInscritas[index],
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DetalhesAtividadeScreen(
-                          atividade: atividadesInscritas[index],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
+            if (atividadesInscritas.isEmpty) {
+              return _buildEmptyState(context, 'Atividades não encontradas.');
+            }
+
+            return _buildListaAtividades(atividadesInscritas);
+          },
+        );
+      },
+    );
+  }
+
+  // --- ABA 2: ATIVIDADES COMO MINISTRANTE (Vou Ministrar) ---
+  Widget _buildAbaMinistrante(String userId) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('atividades')
+          .where('ministranteId', isEqualTo: userId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return _buildEmptyState(context, 'Você não ministra atividades.');
+        }
+
+        final atividadesParaMinistrar = snapshot.data!.docs
+            .map((doc) => Atividade.fromFirestore(doc))
+            .toList();
+
+        return _buildListaAtividades(atividadesParaMinistrar);
+      },
+    );
+  }
+
+  // --- WIDGETS AUXILIARES ---
+
+  Widget _buildListaAtividades(List<Atividade> lista) {
+    return ListView.builder(
+      itemCount: lista.length,
+      padding: const EdgeInsets.all(8),
+      itemBuilder: (context, index) {
+        return AtividadeCard(
+          atividade: lista[index],
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DetalhesAtividadeScreen(atividade: lista[index]),
+              ),
             );
           },
         );
       },
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, String mensagem) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.event_note, size: 64, color: Colors.grey),
+          const SizedBox(height: 16),
+          Text(mensagem, style: const TextStyle(fontSize: 16, color: Colors.grey)),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB80D48)),
+            onPressed: () {
+              Navigator.of(context).pushReplacementNamed('/base');
+            },
+            child: const Text('Explorar Programação', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 }
