@@ -322,16 +322,14 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
             else
               Column(
                 children: [
-                  // 👇 NOVO BOTÃO DE INGRESSO 👇
                   if (_estaInscrito) ...[
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green, // Verde para indicar passagem livre!
+                          backgroundColor: Colors.green, 
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        // O botão do QR Code só precisa chamar a função de mostrar o código
                         onPressed: _mostrarQRCode,
                         icon: const Icon(Icons.qr_code_2, color: Colors.white),
                         label: const Text(
