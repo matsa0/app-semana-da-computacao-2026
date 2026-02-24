@@ -33,7 +33,6 @@ class _BaseScreenState extends State<BaseScreen> {
   }
 
   void _iniciarMonitoramenteDeBadge() {
-
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
@@ -44,29 +43,29 @@ class _BaseScreenState extends State<BaseScreen> {
         .snapshots()
         .listen((snapshot) async {
 
-        bool encontrouProxima = false;
+      bool encontrouProxima = false;
 
-        for (var doc in snapshot.docs) {
-          // busca os detalhes da atividade para checar o horário
-          final atvDoc = await FirebaseFirestore.instance
-              .collection('atividades')
-              .doc(doc['atividadeId'])
-              .get();
+      for (var doc in snapshot.docs) {
+        // busca os detalhes da atividade para checar o horário
+        final atvDoc = await FirebaseFirestore.instance
+            .collection('atividades')
+            .doc(doc['atividadeId'])
+            .get();
 
-          if (atvDoc.exists) {
-            final atividade = Atividade.fromFirestore(atvDoc);
+        if (atvDoc.exists) {
+          final atividade = Atividade.fromFirestore(atvDoc);
 
-            if (atividade.atividadeProxima || atividade.atividadeAcontecendo) {
-              encontrouProxima = true;
-              break; 
-            }
+          if (atividade.atividadeProxima || atividade.atividadeAcontecendo) {
+            encontrouProxima = true;
+            break; 
           }
         }
+      }
 
-        if (mounted) {
-          setState(() => _temBadgeAtivo = encontrouProxima);
-        }
-      });
+      if (mounted) {
+        setState(() => _temBadgeAtivo = encontrouProxima);
+      }
+    });
   }
 
   final List<Widget> _screens = const [
@@ -74,13 +73,6 @@ class _BaseScreenState extends State<BaseScreen> {
     BuscarAtividadeScreen(),
     MinhasAtividadesScreen(),
     PerfilScreen(),
-  ];
-
-  final List<Widget> _titles = const [
-    Text('Página Inicial', textAlign: TextAlign.left),
-    Text('Buscar Atividades', textAlign: TextAlign.left),
-    Text('Minhas Atividades', textAlign: TextAlign.left),
-    Text('Perfil', textAlign: TextAlign.left),
   ];
 
   void _navigateBottomBar(int index) {
@@ -92,7 +84,16 @@ class _BaseScreenState extends State<BaseScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: _titles[_selectedIndex]),
+      appBar: AppBar(
+        title: const Text(
+          'SECOMP 2026',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFFB80D48),
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
@@ -102,7 +103,6 @@ class _BaseScreenState extends State<BaseScreen> {
         items: [
           const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Início'),
           const BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),
-
           BottomNavigationBarItem(
             icon: Badge(
               smallSize: 10,
@@ -110,11 +110,10 @@ class _BaseScreenState extends State<BaseScreen> {
               isLabelVisible: _temBadgeAtivo,
               child: Icon(
                 _selectedIndex == 2 ? Icons.bookmark_added : Icons.bookmark_added_outlined
-                ), 
+              ), 
             ),
             label: 'Minhas Atividades',
           ),
-
           const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],
       ),

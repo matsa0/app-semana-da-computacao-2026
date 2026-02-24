@@ -11,7 +11,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
-  bool _manterConectado = false;
   bool _loading = false;
 
   final Color primaryColor = const Color(0xFFB1124C);
@@ -56,19 +55,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Checkbox(
-                    value: _manterConectado,
-                    onChanged: (value) {
-                      setState(() {
-                        _manterConectado = value ?? false;
-                      });
-                    },
-                  ),
-                  const Text('Manter conectado'),
-                ],
-              ),
               const SizedBox(height: 16),
               _loading
                   ? const Center(child: CircularProgressIndicator())
@@ -80,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: _login,
                       child: const Text(
                         'Entrar',
-                        style: TextStyle(fontSize: 16),
+                        style: TextStyle(fontSize: 16, color: Colors.white),
                       ),
                     ),
               const SizedBox(height: 16),

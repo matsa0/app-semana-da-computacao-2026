@@ -43,19 +43,40 @@ class _TelaInicialState extends State<TelaInicial> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Atividades'),
+        backgroundColor: const Color(0xFFB80D48),
+        elevation: 0,
+        toolbarHeight: 70, // Altura ajustada
+        // Substituímos qualquer texto antigo direto por essa coluna
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(height: 2),
+            Text(
+              'Programação Oficial',
+              style: TextStyle(
+                fontSize: 22,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
         actions: [
-          if (_isOrganizador) // botão só aparece se isso for verdadiero
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CadastrarAtividadeScreen(),
-                  ),
-                );
-              },
+          if (_isOrganizador)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: IconButton(
+                icon: const Icon(Icons.add_circle_outline, color: Colors.white, size: 28),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CadastrarAtividadeScreen(),
+                    ),
+                  );
+                },
+              ),
             ),
         ],
       ),
@@ -78,9 +99,19 @@ class _TelaInicialState extends State<TelaInicial> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
-                    label: Text(tipo),
+                    label: Text(
+                      tipo,
+                      style: const TextStyle(
+                        color: Colors.white, 
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     selected: isSelected,
+                    side: BorderSide.none, 
+                    backgroundColor: const Color(0xFFB80D48),
                     selectedColor: const Color(0xFFB80D48),
+                    showCheckmark: isSelected,
+                    checkmarkColor: Colors.white,
                     onSelected: (_) {
                       setState(() {
                         filtroSelecionado = tipo;
