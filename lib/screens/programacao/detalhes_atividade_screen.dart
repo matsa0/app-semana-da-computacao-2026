@@ -453,14 +453,4 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
       ],
     );
   }
-
-  int _horarioParaMinutos(String horario) {
-    final partes = horario.split(':');
-    if (partes.length != 2) return 0;
-    
-    final horas = int.tryParse(partes[0]) ?? 0;
-    final minutos = int.tryParse(partes[1]) ?? 0;
-    
-    return (horas * 60) + minutos;
-  }
 }
