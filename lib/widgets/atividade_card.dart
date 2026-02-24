@@ -171,12 +171,12 @@ class AtividadeCard extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: onPressed,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: estaInscrito ? Colors.green : const Color(0xFFB80D48),
+                      backgroundColor: const Color(0xFFB80D48),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                     ),
-                    child: Text(
-                      estaInscrito ? 'Inscrito - Ver detalhes' : 'Ver mais', 
-                      style: const TextStyle(color: Colors.white)
+                    child: const Text(
+                      'Ver mais', 
+                      style: TextStyle(color: Colors.white)
                     ),
                   ),
                 )
