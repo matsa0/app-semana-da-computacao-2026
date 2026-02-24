@@ -412,16 +412,24 @@ class _DetalhesAtividadeScreenState extends State<DetalhesAtividadeScreen> {
                     backgroundColor: Colors.indigo, 
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CheckinManualScreen(atividade: widget.atividade),
-                      ),
-                    );
-                  },
+                  
+                  onPressed: widget.atividade.atividadeEncerrada
+                      ? null // desabilita o botão se já encerrou
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CheckinManualScreen(atividade: widget.atividade),
+                            ),
+                          );
+                        },
                   icon: const Icon(Icons.checklist, color: Colors.white),
-                  label: const Text('Fazer Chamada / Check-in', style: TextStyle(fontSize: 18, color: Colors.white)),
+                  label: Text(
+                    widget.atividade.atividadeEncerrada 
+                      ? 'Check-in indisponível (Atividade encerrada)' 
+                        : 'Fazer Check-in', 
+                    style: const TextStyle(fontSize: 18, color: Colors.white)
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
