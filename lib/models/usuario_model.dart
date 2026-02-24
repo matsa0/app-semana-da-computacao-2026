@@ -7,7 +7,7 @@ class Usuario {
   final String curso;
   final String email;
   final bool isOrganizador;
-  final bool isPalestrante;
+  final bool isMinistrante;
 
   Usuario({
     required this.id,
@@ -16,7 +16,7 @@ class Usuario {
     this.sobrenome = '',
     this.curso = '',
     this.isOrganizador = false,
-    this.isPalestrante = false,
+    this.isMinistrante = false,
   });
 
   factory Usuario.fromFirestore(DocumentSnapshot doc) {
@@ -28,7 +28,7 @@ class Usuario {
       curso: data['curso'] ?? '',
       email: data['email'] ?? '',
       isOrganizador: data['isOrganizador'] ?? false,
-      isPalestrante: data['isPalestrante'] ?? false,
+      isMinistrante: data['isMinistrante'] ?? false,
     );
   }
 }
