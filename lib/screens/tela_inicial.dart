@@ -44,7 +44,25 @@ class _TelaInicialState extends State<TelaInicial> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Atividades'),
+        backgroundColor: const Color(0xFFB80D48),
+        elevation: 0,
+        toolbarHeight: 70, // Altura ajustada
+        // Substituímos qualquer texto antigo direto por essa coluna
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(height: 2),
+            Text(
+              'Programação Oficial',
+              style: TextStyle(
+                fontSize: 22,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
         actions: [
           if (_isOrganizador) ...[
             IconButton(
@@ -89,9 +107,19 @@ class _TelaInicialState extends State<TelaInicial> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
-                    label: Text(tipo),
+                    label: Text(
+                      tipo,
+                      style: const TextStyle(
+                        color: Colors.white, 
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     selected: isSelected,
+                    side: BorderSide.none, 
+                    backgroundColor: const Color(0xFFB80D48),
                     selectedColor: const Color(0xFFB80D48),
+                    showCheckmark: isSelected,
+                    checkmarkColor: Colors.white,
                     onSelected: (_) {
                       setState(() {
                         filtroSelecionado = tipo;

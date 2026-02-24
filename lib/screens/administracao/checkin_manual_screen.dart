@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// Lembre-se de ajustar o caminho do seu model se necessário!
 import '../../models/atividade_model.dart'; 
+import 'checkin_qrcode_screen.dart';
 
 class CheckinManualScreen extends StatelessWidget {
   final Atividade atividade;
 
   const CheckinManualScreen({super.key, required this.atividade});
 
-  // Função mágica que vai no Firebase e inverte o status de presença
   Future<void> _alternarPresenca(String inscricaoId, bool valorAtual) async {
     try {
       await FirebaseFirestore.instance
           .collection('inscricoes')
           .doc(inscricaoId)
-          .update({'presente': !valorAtual}); // Se for false, vira true. Se for true, vira false!
+          .update({'presente': !valorAtual}); // se for false, vira true se for true, vira false
     } catch (e) {
       debugPrint('Erro ao atualizar presença: $e');
     }
@@ -62,7 +61,7 @@ class CheckinManualScreen extends StatelessWidget {
                     final dataInscricao = inscricao.data() as Map<String, dynamic>;
                     final usuarioId = dataInscricao['usuarioId'];
                     
-                    // Verifica se o campo já existe. Se não existir, a pessoa levou falta (false)
+                    // verifica se o campo já existe. se não existir, a pessoa levou false
                     final isPresente = dataInscricao.containsKey('presente') 
                         ? dataInscricao['presente'] 
                         : false;
@@ -87,7 +86,7 @@ class CheckinManualScreen extends StatelessWidget {
 
                         return Card(
                           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                          elevation: isPresente ? 2 : 0, // Dá um destaque se estiver presente
+                          elevation: isPresente ? 2 : 0, // dá um destaque se tiver presente
                           child: ListTile(
                             leading: CircleAvatar(
                               backgroundColor: isPresente ? Colors.green : Colors.grey[300],
@@ -100,7 +99,7 @@ class CheckinManualScreen extends StatelessWidget {
                             subtitle: Text(email),
                             trailing: Switch(
                               value: isPresente,
-                              activeThumbColor: Colors.green,
+                              activeColor: Colors.green, // Corrigido de activeThumbColor para activeColor para evitar outros erros de versão
                               onChanged: (bool newValue) {
                                 _alternarPresenca(inscricao.id, isPresente);
                               },
@@ -115,6 +114,20 @@ class CheckinManualScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+      // O Botão flutuante fica aqui embaixo, fora do body!
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CheckinQrCodeScreen(atividade: atividade),
+            ),
+          );
+        },
+        backgroundColor: Colors.indigo,
+        icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
+        label: const Text('Ler Ingresso', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }
